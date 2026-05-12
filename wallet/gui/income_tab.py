@@ -1,8 +1,4 @@
-"""
-wallet/gui/income_tab.py
-------------------------
-Вкладка «Пополнение»: форма зачисления средств + история поступлений.
-"""
+#Вкладка «Пополнение»
 
 from tkinter import ttk, messagebox
 
@@ -38,16 +34,6 @@ class IncomeTab(BaseTab):
         self._desc = ttk.Entry(form, width=30)
         self._desc.grid(row=2, column=1, sticky="w", padx=4, pady=4)
 
-        ttk.Label(form, text="Разрешённый день\nпоступления (1–31):").grid(
-            row=3, column=0, sticky="w", padx=4, pady=4
-        )
-        self._income_day = ttk.Entry(form, width=6)
-        self._income_day.grid(row=3, column=1, sticky="w", padx=4, pady=4)
-        ttk.Label(
-            form,
-            text="(оставьте пустым, чтобы\nне ограничивать)",
-            foreground="gray",
-        ).grid(row=3, column=2, sticky="w", padx=4)
 
         self._day_info = ttk.Label(
             form, text="", foreground="#0a7c4a", font=("Helvetica", 9)
@@ -56,6 +42,45 @@ class IncomeTab(BaseTab):
 
         ttk.Button(form, text="✚  Зачислить", command=self._on_add).grid(
             row=5, column=0, columnspan=2, pady=10, sticky="w", padx=4
+        )
+
+        # ── Настройка разрешённого дня ─────────────────────────
+        day_frame = ttk.LabelFrame(
+            self.frame,
+            text="Настройка дня поступления",
+            padding=12
+        )
+        day_frame.pack(fill="x", pady=(0, 10))
+
+        ttk.Label(
+            day_frame,
+            text="Разрешённый день (1–31):"
+        ).grid(row=0, column=0, sticky="w", padx=4, pady=4)
+
+        self._income_day_setting = ttk.Entry(day_frame, width=8)
+        self._income_day_setting.grid(
+            row=0, column=1, sticky="w", padx=4, pady=4
+        )
+
+        ttk.Button(
+            day_frame,
+            text="Сохранить",
+            command=self._on_set_income_day
+        ).grid(row=0, column=2, padx=6)
+
+        self._day_info = ttk.Label(
+            day_frame,
+            text="",
+            foreground="#0a7c4a",
+            font=("Helvetica", 9)
+        )
+
+        self._day_info.grid(
+            row=1,
+            column=0,
+            columnspan=3,
+            sticky="w",
+            padx=4
         )
 
         # ── История поступлений ────────────────────────────────────────
@@ -89,7 +114,6 @@ class IncomeTab(BaseTab):
                 self._amount.get(),
                 self._date.get(),
                 self._desc.get(),
-                self._income_day.get(),
             )
             messagebox.showinfo("Готово", f"Зачислено {fmt(t.amount)}")
             self._amount.delete(0, "end")
@@ -100,12 +124,13 @@ class IncomeTab(BaseTab):
 
     def refresh(self) -> None:
         day = self.service.get_income_day()
+
         if day:
             self._day_info.config(
                 text=f"Текущий разрешённый день поступления: {day}"
             )
-            self._income_day.delete(0, "end")
-            self._income_day.insert(0, str(day))
+            self._income_day_setting.delete(0, "end")
+            self._income_day_setting.insert(0, str(day))
         else:
             self._day_info.config(text="Ограничение по дню не задано")
 
@@ -114,3 +139,15 @@ class IncomeTab(BaseTab):
             self._tree.insert("", "end", values=(
                 t.id, t.date, t.description, f"+{fmt(t.amount)}"
             ), tags=("income",))
+
+    def _on_set_income_day(self) -> None:
+        try:
+            self.service.set_income_day(
+                self._income_day_setting.get()
+            )
+
+            messagebox.showinfo("Готово", "День сохранён")
+            self.refresh()
+
+        except WalletError as e:
+            messagebox.showerror("Ошибка", str(e))

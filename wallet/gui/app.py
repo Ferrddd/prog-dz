@@ -1,8 +1,4 @@
-"""
-wallet/gui/app.py
------------------
-Главное окно приложения: собирает все вкладки, управляет заголовком.
-"""
+#Главное окно приложения
 
 import tkinter as tk
 from tkinter import ttk
@@ -18,15 +14,14 @@ from .history_tab   import HistoryTab
 from .filter_tab    import FilterTab
 
 
+#Корневое окно приложения «Учёт денежных средств»
 class App(tk.Tk):
-    """Корневое окно приложения «Учёт денежных средств»."""
-
     def __init__(self):
         super().__init__()
-        self.title("💼 Учёт денежных средств")
+        self.title("Учёт денежных средств")
         self.geometry("760x580")
         self.resizable(True, True)
-        self.minsize(640, 480)
+        self.minsize(900, 800)
 
         self._db      = DatabaseManager()
         self._service = WalletService(self._db)
@@ -48,7 +43,7 @@ class App(tk.Tk):
 
         tk.Label(
             header,
-            text="💼  Мой Кошелёк",
+            text="Мой Кошелёк",
             bg="#1a4a7a", fg="white",
             font=("Helvetica", 14, "bold"),
         ).pack(side="left", padx=16, pady=8)
@@ -66,11 +61,11 @@ class App(tk.Tk):
         notebook.pack(fill="both", expand=True, padx=8, pady=8)
 
         self._tabs: list[BaseTab] = [
-            DashboardTab(notebook, "📊 Обзор",      self._service),
-            IncomeTab   (notebook, "💰 Пополнение", self._service),
-            ExpenseTab  (notebook, "🛒 Трата",      self._service),
-            HistoryTab  (notebook, "📋 История",    self._service),
-            FilterTab   (notebook, "🔍 Фильтры",    self._service),
+            DashboardTab(notebook, "Обзор",      self._service),
+            IncomeTab   (notebook, "Пополнение", self._service),
+            ExpenseTab  (notebook, "Трата",      self._service),
+            HistoryTab  (notebook, "История",    self._service),
+            FilterTab   (notebook, "Фильтры",    self._service),
         ]
 
         notebook.bind("<<NotebookTabChanged>>", self._on_tab_change)

@@ -1,8 +1,4 @@
-"""
-main.py — точка входа приложения.
-Запуск: python main.py
-"""
-
+# Точка входа
 from wallet import App
 
 

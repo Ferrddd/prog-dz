@@ -1,6 +1,4 @@
 """
-wallet/service.py
------------------
 Бизнес-логика приложения: валидация, правила операций.
 Не знает ничего о GUI — только работает с DatabaseManager.
 """
@@ -33,43 +31,42 @@ class WalletService:
     # ──────────────────────────────────────────────
     # Вспомогательные методы парсинга/валидации
     # ──────────────────────────────────────────────
-
+    
+    # Проверка строки денежной суммы и WalletError при ошибке
     def _parse_amount(self, value: str) -> float:
-        """Парсит строку суммы, выбрасывает WalletError при ошибке."""
         try:
             amount = float(value.replace(",", ".").strip())
             if amount <= 0:
                 raise ValueError
             return amount
         except ValueError:
-            raise WalletError("Сумма должна быть положительным числом.")
+            raise WalletError("Сумма должна быть положительным числом")
 
+
+    # Проверка даты на формат и WalletError при ошибке
     def _parse_date(self, value: str) -> str:
-        """
-        Принимает дату в форматах ДД.ММ.ГГГГ / ГГГГ-ММ-ДД / ДД/ММ/ГГГГ.
-        Возвращает ISO-строку ГГГГ-ММ-ДД.
-        """
         value = value.strip()
-        for fmt in ("%Y-%m-%d", "%d.%m.%Y", "%d/%m/%Y"):
-            try:
-                return datetime.datetime.strptime(value, fmt).date().isoformat()
-            except ValueError:
-                continue
-        raise WalletError(
-            "Неверный формат даты. Используйте ДД.ММ.ГГГГ или ГГГГ-ММ-ДД."
-        )
+        fmt = "%d.%m.%Y"
+
+        try:
+            return datetime.datetime.strptime(value, fmt).date().isoformat()
+        except ValueError:
+            raise WalletError("Неверный формат даты. Используйте ДД.ММ.ГГГГ")
+        except:
+            raise WalletError("Неправильный ввод")
+    
 
     # ──────────────────────────────────────────────
     # Настройка дня поступления
     # ──────────────────────────────────────────────
 
+    # Возвращает разрешённый день поступления
     def get_income_day(self) -> int | None:
-        """Возвращает разрешённый день поступления или None, если не задан."""
         val = self._db.get_setting("income_day")
         return int(val) if val else None
 
+    # Устанавливает разрешенный день
     def set_income_day(self, day_str: str) -> None:
-        """Сохраняет разрешённый день поступления (1–31)."""
         try:
             day = int(day_str.strip())
             if not (1 <= day <= 31):
@@ -82,25 +79,18 @@ class WalletService:
     # Операции с кошельком
     # ──────────────────────────────────────────────
 
+    # Зачисляет средства на кошелёк.
     def add_income(
         self,
         amount_str: str,
         date_str: str,
         description: str,
-        income_day_str: str = "",
     ) -> Transaction:
-        """
-        Зачисляет средства на кошелёк.
-        Если income_day_str задан — обновляет ограничение по дню и проверяет его.
-        """
         if not description.strip():
-            raise WalletError("Укажите описание поступления.")
+            description = "---"
 
         amount = self._parse_amount(amount_str)
         date   = self._parse_date(date_str)
-
-        if income_day_str.strip():
-            self.set_income_day(income_day_str)
 
         income_day = self.get_income_day()
         if income_day is not None:
